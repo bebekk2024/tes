@@ -1,0 +1,32 @@
+# Copyright (c) 2025 Nand Yaduwanshi <NoxxOP>
+# Location: Supaul, Bihar
+#
+# Small, defensive rewrite of the Mongo bootstrap to avoid:
+# - assuming LOGGER is callable
+# - exiting the process during import-time failures
+# - silent/unclear exception handling
+from motor.motor_asyncio import AsyncIOMotorClient
+
+from config import MONGO_DB_URI
+
+# Import a clear helper get_logger when available; fall back to stdlib logging
+try:
+    from ..logging import get_logger
+except Exception:
+    import logging
+
+    def get_logger(name: str):
+        return logging.getLogger(name)
+
+log = get_logger(__name__)
+
+log.info("Connecting to your Mongo Database...")
+mongodb = None
+try:
+    _mongo_async_ = AsyncIOMotorClient(MONGO_DB_URI)
+    mongodb = _mongo_async_.Yukki
+    log.info("Connected to your Mongo Database.")
+except Exception:
+    # Log full traceback for debugging; do NOT exit during import.
+    log.exception("Failed to connect to your Mongo Database.")
+    # Keep mongodb as None so callers can detect and handle the failure.
